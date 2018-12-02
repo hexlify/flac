@@ -54,3 +54,13 @@ class Picture(MetadataBlock):
          _) = unpack('>IIIII', _substr(data, 12+mime_len+desc_len, 20))
 
         self.image_data = data[32+mime_len+desc_len:]
+
+    def __str__(self):
+        s = f'Type: {self.type}\n'
+        s += f'Mime type: {self.mime_type}\n'
+        s += f'Description: {self.description}\n'
+        s += f'Width: {self.width}\n'
+        s += f'Height: {self.height}\n'
+        s += f'Color depth: {self.color_depth}\n'
+        s += f'Used colors: {self.used_colors}\n'
+        return s

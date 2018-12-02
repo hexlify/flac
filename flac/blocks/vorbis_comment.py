@@ -31,3 +31,10 @@ class VorbisComment(MetadataBlock):
             if tag not in self.tags:
                 self.tags[tag] = []
             self.tags[tag].append(value)
+
+    def __str__(self):
+        s = f'Vendor string: {self.vendor_string}'
+        for tag, values in self.tags.items():
+            vals = ','.join(values)
+            s += f'\n{tag.capitalize()}: {vals}'
+        return s + '\n'
