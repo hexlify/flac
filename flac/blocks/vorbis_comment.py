@@ -1,6 +1,6 @@
 import struct as byte
-import bitstruct as bit
 
+import bitstruct as bit
 
 from .metadata import MetadataBlock
 

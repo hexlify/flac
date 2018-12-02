@@ -1,10 +1,10 @@
 import unittest
 
-from flac.blocks import Streaminfo, VorbisComment
+from flac.blocks import Streaminfo, VorbisComment, Picture
 
 
 class StreaminfoTest(unittest.TestCase):
-    def test_unpacking(self):
+    def test_simple_parsing(self):
         data = (b'\x04\x80\x04\x80\x00\x06r\x00\x17\xf2\x17p\x03p\x00:i\x80'
                 b'\xe5\xd1\x00\xc6?Q\x88\x90\x0cf\xb6\xa6\xa0\x8c\xe2\xeb')
         s = Streaminfo(length=len(data), is_last=False, data=data)
@@ -61,3 +61,21 @@ class VorbisCommentTest(unittest.TestCase):
         self.assertListEqual(
             vc.tags['GENRE'],
             ['Classical', 'Rap', 'Rock'])
+
+
+class PictureTest(unittest.TestCase):
+    def test_simple_parsing(self):
+        data = (
+            b'\x00\x00\x00\x03\x00\x00\x00\nimage/jpeg\x00\x00\x00\x0bFront Co'
+            b'ver\x00\x00\x04\xb0\x00\x00\x04\xb0\x00\x00\x00\x18\x00\x00\x00'
+            b'\x00\x00\n"C\xff\xd8')
+        pic = Picture(len(data), False, data)
+
+        self.assertEqual(pic.type, 'Cover (front)')
+        self.assertEqual(pic.mime_type, 'image/jpeg')
+        self.assertEqual(pic.description, 'Front Cover')
+        self.assertEqual(pic.height, 1200)
+        self.assertEqual(pic.width, 1200)
+        self.assertEqual(pic.color_depth, 24)
+        self.assertEqual(pic.used_colors, 0)
+        self.assertEqual(pic.image_data, b'\xff\xd8')
