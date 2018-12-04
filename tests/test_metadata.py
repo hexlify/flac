@@ -1,6 +1,6 @@
 import unittest
 
-from flac.blocks import Streaminfo, VorbisComment, Picture
+from flac.meta.blocks import Picture, Streaminfo, VorbisComment
 
 
 class StreaminfoTest(unittest.TestCase):
@@ -14,8 +14,8 @@ class StreaminfoTest(unittest.TestCase):
         self.assertEqual(s.min_frame_size, 1650)
         self.assertEqual(s.max_frame_size, 6130)
         self.assertEqual(s.sample_rate, 96000)
-        self.assertEqual(s.channels, 1)
-        self.assertEqual(s.bits_per_sample, 23)
+        self.assertEqual(s.channels, 2)
+        self.assertEqual(s.bits_per_sample, 24)
         self.assertEqual(s.total_samples, 3828096)
         self.assertEqual(s.md5, data[18:])
 

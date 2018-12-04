@@ -17,6 +17,8 @@ class Streaminfo(MetadataBlock):
         self.max_frame_size = byte.unpack('>I', b'\x00' + data[7:10])[0]
         (self.sample_rate, self.channels, self.bits_per_sample,
          self.total_samples) = bit.unpack('>u20u3u5u36', data[10:18])
+        self.channels += 1
+        self.bits_per_sample += 1
         self.md5 = data[18:]
 
     def __str__(self):
