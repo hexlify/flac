@@ -18,3 +18,9 @@
     $ cd flac
     $ python main.py [-h] file {info,play,covers} ...
 ```
+
+
+# Запуск тестов
+```
+    $ nosetests tests/
+```
