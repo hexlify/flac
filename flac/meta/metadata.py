@@ -8,8 +8,7 @@ from .blocks import *
 FLAC_MARKER = b'fLaC'
 block_types = {
     0: Streaminfo,
-    # 1: "PADDING",
-    # 2: "APPLICATION",
+    2: Application,
     # 3: "SEEKTABLE",
     4: VorbisComment,
     # 5: "CUESHEET",
@@ -74,3 +73,7 @@ class Metadata:
     @property
     def channels(self):
         return self._streaminfo.channels
+
+    @property
+    def pictures(self):
+        return list(filter(lambda b: isinstance(b, Picture), self._blocks))

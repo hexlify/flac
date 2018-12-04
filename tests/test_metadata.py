@@ -1,6 +1,6 @@
 import unittest
 
-from flac.meta.blocks import Picture, Streaminfo, VorbisComment
+from flac.meta.blocks import *
 
 
 class StreaminfoTest(unittest.TestCase):
@@ -79,3 +79,12 @@ class PictureTest(unittest.TestCase):
         self.assertEqual(pic.color_depth, 24)
         self.assertEqual(pic.used_colors, 0)
         self.assertEqual(pic.image_data, b'\xff\xd8')
+
+
+class ApplicationTest(unittest.TestCase):
+    def test_simple_parsing(self):
+        data = b'SONYapplicationdata'
+        app = Application(len(data), False, data)
+
+        self.assertEqual(app.id, 'SONY')
+        self.assertEqual(app.data, b'applicationdata')

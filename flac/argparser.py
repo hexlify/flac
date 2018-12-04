@@ -13,4 +13,8 @@ def make_parser():
 
     play = commands.add_parser('play', help='play file')
 
+    extract_covers = commands.add_parser('covers', help='extract covers')
+    extract_covers.add_argument(
+        'dir', default='.', help='directory path to extract covers to')
+
     return parser
