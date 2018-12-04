@@ -56,11 +56,11 @@ class Picture(MetadataBlock):
         self.image_data = data[32+mime_len+desc_len:]
 
     def __str__(self):
-        s = f'Type: {self.type}\n'
-        s += f'Mime type: {self.mime_type}\n'
-        s += f'Description: {self.description}\n'
-        s += f'Width: {self.width}\n'
-        s += f'Height: {self.height}\n'
-        s += f'Color depth: {self.color_depth}\n'
-        s += f'Used colors: {self.used_colors}\n'
+        s = 'Type: {}\n'.format(self.type)
+        s += 'Mime type: {}\n'.format(self.mime_type)
+        s += 'Description: {}\n'.format(self.description)
+        s += 'Width: {}\n'.format(self.width)
+        s += 'Height: {}\n'.format(self.height)
+        s += 'Color depth: {}\n'.format(self.color_depth)
+        s += 'Used colors: {}\n'.format(self.used_colors)
         return s

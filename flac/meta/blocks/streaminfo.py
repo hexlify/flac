@@ -22,13 +22,13 @@ class Streaminfo(MetadataBlock):
         self.md5 = data[18:]
 
     def __str__(self):
-        s = f'min_block_size: {self.min_block_size}\n'
-        s += f'max_block_size: {self.max_block_size}\n'
-        s += f'min_frame_size: {self.min_frame_size}\n'
-        s += f'max_frame_size: {self.max_frame_size}\n'
-        s += f'sample_rate: {self.sample_rate}\n'
-        s += f'channels: {self.channels}\n'
-        s += f'bits_per_sample: {self.bits_per_sample}\n'
-        s += f'total_samples: {self.total_samples}\n'
-        s += f'md5: {hexlify(self.md5).decode()}\n'
+        s = 'min_block_size: {}\n'.format(self.min_block_size)
+        s += 'max_block_size: {}\n'.format(self.max_block_size)
+        s += 'min_frame_size: {}\n'.format(self.min_frame_size)
+        s += 'max_frame_size: {}\n'.format(self.max_frame_size)
+        s += 'sample_rate: {}\n'.format(self.sample_rate)
+        s += 'channels: {}\n'.format(self.channels)
+        s += 'bits_per_sample: {}\n'.format(self.bits_per_sample)
+        s += 'total_samples: {}\n'.format(self.total_samples)
+        s += 'md5: {}\n'.format(hexlify(self.md5).decode())
         return s

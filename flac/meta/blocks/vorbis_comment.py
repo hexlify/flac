@@ -33,8 +33,8 @@ class VorbisComment(MetadataBlock):
             self.tags[tag].append(value)
 
     def __str__(self):
-        s = f'Vendor string: {self.vendor_string}'
+        s = 'Vendor string: {}'.format(self.vendor_string)
         for tag, values in self.tags.items():
             vals = ','.join(values)
-            s += f'\n{tag.capitalize()}: {vals}'
+            s += '\n{}: {}'.format(tag.capitalize(), vals)
         return s + '\n'

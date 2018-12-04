@@ -11,4 +11,4 @@ class Application(MetadataBlock):
         self.data = data[4:]
 
     def __str__(self):
-        return f'Application ID: {self.id}\n'
+        return 'Application ID: {}\n'.format(self.id)

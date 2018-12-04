@@ -5,8 +5,7 @@
 
     sudo apt-get install libasound-dev
     sudo apt-get install portaudio19-dev
+    sudo apt-get install python3.5-dev
 
-    sudo apt-get install python3.6-dev
-
-    pip install pyaudio
+    pip install -r requests.txt
 ```
