@@ -1,13 +1,20 @@
+import io
 import unittest
 
-from flac.meta.blocks import *
+from flac.meta import BitStream
+from flac.meta.blocks import Application, Picture, Streaminfo, VorbisComment
+
+
+def create_stream(data: bytes) -> BitStream:
+    return BitStream(io.BytesIO(data))
 
 
 class StreaminfoTest(unittest.TestCase):
     def test_simple_parsing(self):
         data = (b'\x04\x80\x04\x80\x00\x06r\x00\x17\xf2\x17p\x03p\x00:i\x80'
                 b'\xe5\xd1\x00\xc6?Q\x88\x90\x0cf\xb6\xa6\xa0\x8c\xe2\xeb')
-        s = Streaminfo(length=len(data), is_last=False, data=data)
+
+        s = Streaminfo(len(data), False, create_stream(data))
 
         self.assertEqual(s.min_block_size, 1152)
         self.assertEqual(s.max_block_size, 1152)
@@ -27,7 +34,7 @@ class VorbisCommentTest(unittest.TestCase):
             b'\x00\x0f\x00\x00\x00ALBUM=Bee Moved\x0f\x00\x00\x00TITLE=Bee Mov'
             b'ed\x1a\x00\x00\x00ALBUMARTIST=Blue Monday FM\x06\x00\x00\x00MRAT'
             b'=0\x15\x00\x00\x00ARTIST=Blue Monday FM')
-        vc = VorbisComment(len(data), False, data)
+        vc = VorbisComment(len(data), False, create_stream(data))
 
         self.assertEqual(vc.vendor_string,
                          'reference libFLAC 1.2.1 win64 20080709')
@@ -55,7 +62,7 @@ class VorbisCommentTest(unittest.TestCase):
             b'E=Rock\x11\x00\x00\x00ISRC=NOMPP1603040\x08\x00'
             b'\x00\x00LABEL=2L)\x00\x00\x00TITLE=Frank Bridge Variations: 4. R'
             b'omance\r\x00\x00\x00TRACKNUMBER=4\r\x00\x00\x00TRACKTOTAL=22')
-        vc = VorbisComment(len(data), False, data)
+        vc = VorbisComment(len(data), False, create_stream(data))
 
         self.assertEqual(vc.vendor_string, 'reference libFLAC 1.2.1 20141125')
         self.assertListEqual(
@@ -69,7 +76,7 @@ class PictureTest(unittest.TestCase):
             b'\x00\x00\x00\x03\x00\x00\x00\nimage/jpeg\x00\x00\x00\x0bFront Co'
             b'ver\x00\x00\x04\xb0\x00\x00\x04\xb0\x00\x00\x00\x18\x00\x00\x00'
             b'\x00\x00\n"C\xff\xd8')
-        pic = Picture(len(data), False, data)
+        pic = Picture(len(data), False, create_stream(data))
 
         self.assertEqual(pic.type, 'Cover (front)')
         self.assertEqual(pic.mime_type, 'image/jpeg')
@@ -84,7 +91,7 @@ class PictureTest(unittest.TestCase):
 class ApplicationTest(unittest.TestCase):
     def test_simple_parsing(self):
         data = b'SONYapplicationdata'
-        app = Application(len(data), False, data)
+        app = Application(len(data), False, create_stream(data))
 
         self.assertEqual(app.id, 'SONY')
         self.assertEqual(app.data, b'applicationdata')

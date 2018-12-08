@@ -1,32 +1,26 @@
-import struct as byte
+from struct import unpack
 
-import bitstruct as bit
-
+from ..bit_stream import BitStream
 from .metadata import MetadataBlock
 
 
 class VorbisComment(MetadataBlock):
-    def __init__(self, length: int, is_last: bool, data: bytes):
-        if len(data) != length or length < 0:
-            raise ValueError()
+    def __init__(self, size: int, is_last: bool, stream: BitStream):
+        super().__init__(size, is_last)
 
-        super().__init__(length, is_last)
-        self.parse_comments(data)
+        self.parse_comments(stream)
 
-    def parse_comments(self, data):
-        vendor_length = byte.unpack('<I', data[:4])[0]
-        self.vendor_string = data[4:4+vendor_length].decode('utf-8')
-        comments_length = byte.unpack(
-            '<I', data[4+vendor_length:8 + vendor_length])[0]
+    def parse_comments(self, stream: BitStream):
+        vendor_length = unpack("<I", stream.read_bytes(4))[0]
+        self.vendor_string = stream.read_bytes(vendor_length).decode('utf-8')
 
-        index = 8 + vendor_length
-        self.tags = {}
+        comments_length = unpack("<I", stream.read_bytes(4))[0]
+        self.tags = {}  # type: ignore
+
         for _ in range(comments_length):
-            comment_length = byte.unpack('<I', data[index:index+4])[0]
-            index += 4
-            comment = data[index:index + comment_length].decode('utf-8')
+            comment_length = unpack("<I", stream.read_bytes(4))[0]
+            comment = stream.read_bytes(comment_length).decode('utf-8')
             tag, value = comment.split('=')
-            index += comment_length
 
             if tag not in self.tags:
                 self.tags[tag] = []

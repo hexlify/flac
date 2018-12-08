@@ -1,7 +1,9 @@
+from os.path import isfile
 from typing import List, Tuple
 
 from bitstruct import unpack
 
+from .bit_stream import BitStream
 from .blocks import *
 
 
@@ -18,37 +20,40 @@ block_types = {
 
 class Metadata:
     def __init__(self, filename: str):
-        with open(filename, 'rb') as f:
-            self._data = f.read()
-        if self._data[:4] != FLAC_MARKER:
+        if not isfile(filename):
+            raise FileExistsError("File doest exist")
+
+        self._f = open(filename, 'rb')
+        self._stream = BitStream(self._f)
+
+        if self._stream.read_bytes(4) != FLAC_MARKER:
             raise ValueError('Bad flac file')
 
-        blocks = self._parse_metadata_blocks(4)
+        blocks = self._parse_metadata_blocks()
         self._streaminfo = blocks[0]
         self._blocks = blocks[1:]
 
-    def _parse_metadata_blocks(self, start: int) -> List[MetadataBlock]:
-        index = start
+    def __del__(self):
+        self._f.close()
+
+    def _parse_metadata_blocks(self) -> List[MetadataBlock]:
         blocks = []
-
         while True:
-            block, index = self._parse_metadata_block(index)
+            block = self._parse_metadata_block()
             blocks.append(block)
-
             if block.is_last:
                 break
 
         return blocks
 
-    def _parse_metadata_block(self, start: int) -> Tuple[MetadataBlock, int]:
-        is_last, type, size = unpack('>u1u7u24', self._data[start:start+4])
-        start += 4
+    def _parse_metadata_block(self) -> MetadataBlock:
+        is_last = self._stream.read_uint(1)
+        type = self._stream.read_uint(7)
+        size = self._stream.read_uint(24)
+
         if type in block_types:
-            block = block_types[type](size, is_last == 1,
-                                      self._data[start:start+size])
-        else:
-            block = Unknown(size, is_last == 1, b'')
-        return (block, start + size)
+            return block_types[type](size, is_last == 1, self._stream)
+        return Unknown(size, is_last == 1, self._stream)
 
     def get_all_data(self, all: bool) -> str:
         if not all:

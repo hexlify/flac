@@ -1,25 +1,22 @@
-import struct as byte
 from binascii import hexlify
 
-import bitstruct as bit
-
+from ..bit_stream import BitStream
 from .metadata import MetadataBlock
 
 
 class Streaminfo(MetadataBlock):
-    def __init__(self, length: int, is_last: bool, data: bytes):
-        if len(data) != length or length < 0:
-            raise ValueError()
+    def __init__(self, size: int, is_last: bool, stream: BitStream):
+        super().__init__(size, is_last)
 
-        super().__init__(length, is_last)
-        self.min_block_size, self.max_block_size = byte.unpack('>HH', data[:4])
-        self.min_frame_size = byte.unpack('>I', b'\x00' + data[4:7])[0]
-        self.max_frame_size = byte.unpack('>I', b'\x00' + data[7:10])[0]
-        (self.sample_rate, self.channels, self.bits_per_sample,
-         self.total_samples) = bit.unpack('>u20u3u5u36', data[10:18])
-        self.channels += 1
-        self.bits_per_sample += 1
-        self.md5 = data[18:]
+        self.min_block_size = stream.read_uint(16)
+        self.max_block_size = stream.read_uint(16)
+        self.min_frame_size = stream.read_uint(24)
+        self.max_frame_size = stream.read_uint(24)
+        self.sample_rate = stream.read_uint(20)
+        self.channels = stream.read_uint(3) + 1
+        self.bits_per_sample = stream.read_uint(5) + 1
+        self.total_samples = stream.read_uint(36)
+        self.md5 = stream.read_bytes(16)
 
     def __str__(self):
         s = 'min_block_size: {}\n'.format(self.min_block_size)
