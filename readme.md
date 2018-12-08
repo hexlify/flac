@@ -1,26 +1,28 @@
 # Установка зависимостей
 
-Работает с `python3.5`
+Работает с `python3.5+`
 
 ```
-    sudo apt-get install ffmpeg
+$ cat packages | xargs apt-get install -y
+$ pip3 install -r requirements.txt
+```
 
-    sudo apt-get install libasound-dev
-    sudo apt-get install portaudio19-dev
-    sudo apt-get install python3.5-dev  # for python3.5
+# Скачивание тестовых файлов
 
-    pip install -r requests.txt
+```
+$ chmod +x get_samples.sh
+$ ./get_samples.sh
 ```
 
 # Запуск
 
 ```
-    $ cd flac
-    $ python main.py [-h] file {info,play,covers} ...
+$ cd flac
+$ python main.py [-h] file {info,play,covers} ...
 ```
-
 
 # Запуск тестов
+
 ```
-    $ pytest .
+$ pytest .
 ```

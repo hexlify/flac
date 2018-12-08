@@ -11,6 +11,7 @@ if __name__ == '__main__':
     parser = make_parser()
     args = parser.parse_args()
 
+    # TODO сделай проверку на существование файла
     meta = Metadata(args.file)
 
     if args.command == 'info':
