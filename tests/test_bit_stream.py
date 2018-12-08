@@ -29,3 +29,13 @@ class BitStreamTest(unittest.TestCase):
         self.assertEqual(self.stream.read_byte(), 0b01100001)
         self.assertEqual(self.stream._bitbuffer, 0)
         self.assertEqual(self.stream._bitbufferlen, 0)
+
+    def test_reading_rice_encoded_int(self):
+        data = 0b00001010101010111000010111010000.to_bytes(4, byteorder='big')
+        stream = BitStream(io.BytesIO(data))
+
+        self.assertEqual(stream.read_rice_int(4), -35)
+        self.assertEqual(stream.read_rice_int(4), -11)
+        self.assertEqual(stream.read_rice_int(4), +4)
+        self.assertEqual(stream.read_rice_int(4), -12)
+        self.assertEqual(stream.read_rice_int(4), 8)

@@ -51,6 +51,17 @@ class BitStream:
         res -= res >> (n - 1) << n
         return res
 
+    def read_rice_int(self, param):
+        """Считать rice encoded данные
+        """
+        val = 0
+        while self.read_uint(1) == 0:
+            val += 1
+        val = (val << param) | self.read_uint(param)
+        if (val & 1) == 0:
+            return val >> 1
+        return (val >> 1) * -1 - 1
+
     def _clear_buffer(self):
         self._bitbuffer = 0
         self._bitbufferlen = 0
