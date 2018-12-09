@@ -5,12 +5,12 @@ from pyaudio import PyAudio, paInt16, paInt32
 from pydub import AudioSegment
 from pydub.utils import make_chunks
 
-from meta import Metadata
+from meta import Flac
 
 
 class Song(Thread):
     def __init__(self, filename: str):
-        self.meta = Metadata(filename)
+        self.meta = Flac(filename)
         self._segment = AudioSegment.from_file(filename)
         self._audio = PyAudio()
         self._is_paused = True
@@ -25,7 +25,7 @@ class Song(Thread):
         format = paInt16 if self.meta.sample_width == 16 else paInt32
         return self._audio.open(
             format=format, channels=self.meta.channels,
-            rate=self.meta.frame_rate, output=True)
+            rate=self.meta.sample_rate, output=True)
 
     def pause(self):
         self._is_paused = True
