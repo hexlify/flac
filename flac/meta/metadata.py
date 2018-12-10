@@ -18,6 +18,14 @@ block_types = {
     6: Picture,
 }
 
+FIXED_SUBFRAME_COEFFS = [
+    [],
+    [1],
+    [2, -1],
+    [3, -3, 1],
+    [4, -6, 4, 1],
+]
+
 
 class Flac:
     def __init__(self, filename: str):
@@ -188,13 +196,23 @@ class Flac:
                 wasted_bits_per_sample += 1
         bits_per_sample -= wasted_bits_per_sample
 
+        if subframe_type == 0:
+            # CONSTANT subframe
+            result = [self._stream.read_sint(bits_per_sample)] * block_size
+        if subframe_type == 1:
+            # VERBATIM subframe
+            result = [self._stream.read_sint(bits_per_sample)
+                      for _ in range(block_size)]
+        if 8 <= subframe_type <= 12:
+            result = self.decode_fixed_subframe(subframe_type - 8,
+                                                block_size, bits_per_sample)
         if 32 <= subframe_type:
             result = self.decode_lpc_subframe(
                 lpc_order=subframe_type - 31,
                 block_size=block_size,
                 bits_per_sample=bits_per_sample)
         else:
-            raise ValueError('This subframe type not implemented yet')
+            raise ValueError('Invalid subframe type')
 
         if wasted_bits_per_sample > 0:
             return [(s << wasted_bits_per_sample) for s in result]
@@ -215,6 +233,21 @@ class Flac:
             residual = residuals[i - lpc_order]
             s = sum(coef * result[i - j - 1] for (j, coef) in enumerate(coefs))
             s >>= qlp_shift_needed
+            result[i] = s + residual
+
+        return result
+
+    def decode_fixed_subframe(self, lpc_order: int, block_size: int,
+                              bits_per_sample: int) -> List[int]:
+        warmup_samples = [self._stream.read_sint(bits_per_sample)
+                          for _ in range(lpc_order)]
+        coefs = FIXED_SUBFRAME_COEFFS[lpc_order]
+        residuals = self.decode_residuals(block_size, lpc_order)
+
+        result = warmup_samples + [-1] * len(residuals)
+        for i in range(lpc_order, len(result)):
+            residual = residuals[i - lpc_order]
+            s = sum(coef * result[i - j - 1] for (j, coef) in enumerate(coefs))
             result[i] = s + residual
 
         return result
