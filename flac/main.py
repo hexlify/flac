@@ -1,7 +1,7 @@
 import pickle
 import struct
 from mimetypes import guess_extension
-from os.path import isdir, join
+from os.path import isdir, join, isfile
 from typing import List, Tuple
 
 from argparser import make_parser
@@ -33,8 +33,8 @@ def convert_to_wav(flac: Flac, wav_filename):
         add_end = 128 if flac.sample_width == 8 else 0
 
         for frame_count, blocks in enumerate(flac.audio_data):
-            frame_count += 1
-            print(frame_count)
+            progress = int(flac._f.tell() / flac.size * 100)
+            print('{}%'.format(progress), end='\r')
 
             block_size = len(blocks[0])
             for i in range(block_size):
@@ -96,6 +96,10 @@ def main():
     parser = make_parser()
     args = parser.parse_args()
 
+    if not isfile(args.file):
+        print("Flac file doesn't exist")
+        return
+
     flac = Flac(args.file)
 
     if args.command == 'play':
@@ -107,6 +111,9 @@ def main():
 
     if args.command == 'meta':
         meta_commands[args.type](flac)
+
+    if args.command == 'conv':
+        convert_to_wav(flac, args.wav_file)
 
 
 if __name__ == '__main__':

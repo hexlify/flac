@@ -19,4 +19,7 @@ def make_parser():
     extract_covers.add_argument(
         'dir', default='.', help='directory path to extract covers to')
 
+    convert = commands.add_parser('conv', help='convert flac to wav')
+    convert.add_argument('wav_file', help='wav file')
+
     return parser

@@ -1,4 +1,4 @@
-from os.path import isfile
+from os.path import getsize
 from typing import List, Tuple, Generator
 
 from .bit_stream import BitStream
@@ -26,10 +26,8 @@ FIXED_SUBFRAME_COEFFS = [
 
 class Flac:
     def __init__(self, filename: str):
-        if not isfile(filename):
-            raise FileExistsError("File doest exist")
-
         self._f = open(filename, 'rb')
+        self.size = getsize(filename)
         self._stream = BitStream(self._f)
 
         if self._stream.read_bytes(4) != FLAC_MARKER:
@@ -76,6 +74,10 @@ class Flac:
     @property
     def total_samples(self):
         return self._streaminfo.total_samples
+
+    @property
+    def duration(self):
+        return self.total_samples // self.sample_rate
 
     @property
     def metadata_blocks(self):
