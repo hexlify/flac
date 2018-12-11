@@ -1,11 +1,12 @@
 import pickle
 import struct
 from mimetypes import guess_extension
-from os.path import isdir, join, isfile
+from os.path import isdir, isfile, join
 from typing import List, Tuple
 
 from argparser import make_parser
 from meta import BitStream, Flac
+from player import PlayerApp, PlayerForm
 from song import Song
 
 
@@ -103,8 +104,7 @@ def main():
     flac = Flac(args.file)
 
     if args.command == 'play':
-        song = Song(args.file)
-        song.play()
+        Song(flac).play()
 
     if args.command == 'covers':
         extract_covers(flac, args.dir)
