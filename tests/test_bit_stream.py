@@ -39,3 +39,19 @@ class BitStreamTest(unittest.TestCase):
         self.assertEqual(stream.read_rice_int(4), +4)
         self.assertEqual(stream.read_rice_int(4), -12)
         self.assertEqual(stream.read_rice_int(4), 8)
+
+    def test_reading_bytes(self):
+        data = b'bytes'
+        stream = BitStream(io.BytesIO(data))
+        stream.read_uint(3)
+        actual = stream.read_bytes(4)
+
+        self.assertEqual(stream._bitbuffer, 0)
+        self.assertEqual(stream._bitbufferlen, 0)
+        self.assertEqual(actual, b'ytes')
+
+    def test_reading_signed_int(self):
+        data = (-12).to_bytes(1, byteorder='big', signed=True)
+        stream = BitStream(io.BytesIO(data))
+
+        self.assertEqual(stream.read_sint(8), -12)

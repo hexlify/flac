@@ -1,4 +1,3 @@
-from bitstruct import unpack
 from typing import BinaryIO
 
 
@@ -26,24 +25,21 @@ class BitStream:
     def read_byte(self) -> int:
         """Считываем следующий байт. При необходимости выравниваем по байтам
         """
-        # if self._bitbufferlen >= 8:
-        #     return self.read_uint(8)
-
         self._clear_buffer()
         result = self._stream.read(1)
         if len(result) == 0:
             return -1
         return result[0]
 
-    # TODO протестируй
     def read_bytes(self, n) -> bytes:
+        """Считываем следующие n байтов. Буффер чистится
+        """
         self._clear_buffer()
         result = self._stream.read(n)
         if len(result) == 0:
             raise EOFError()
         return result
 
-    # TODO протестируй
     def read_sint(self, n):
         """Считать следующие n битов как signed int
         """

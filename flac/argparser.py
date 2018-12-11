@@ -8,8 +8,10 @@ def make_parser():
     commands = parser.add_subparsers(title='commands', dest='command')
     commands.required = True
 
-    info = commands.add_parser('info', help='info about file')
-    info.add_argument('--all', action='store_true', help='all info')
+    meta = commands.add_parser('meta', help="show flac's metadata")
+    meta_types = ['all', 'info', 'app', 'pic', 'tags']
+    meta.add_argument('type', type=str, choices=meta_types,
+                      help="metadata's type")
 
     play = commands.add_parser('play', help='play file')
 

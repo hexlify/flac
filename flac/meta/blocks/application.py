@@ -10,4 +10,4 @@ class Application(MetadataBlock):
         self.data = stream.read_bytes(size - 4)
 
     def __str__(self):
-        return 'Application ID: {}\n'.format(self.id)
+        return 'Application ID: {}'.format(self.id)

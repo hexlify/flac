@@ -27,5 +27,5 @@ class Streaminfo(MetadataBlock):
         s += 'channels: {}\n'.format(self.channels)
         s += 'bits_per_sample: {}\n'.format(self.bits_per_sample)
         s += 'total_samples: {}\n'.format(self.total_samples)
-        s += 'md5: {}\n'.format(hexlify(self.md5).decode())
+        s += 'md5: {}'.format(hexlify(self.md5).decode())
         return s

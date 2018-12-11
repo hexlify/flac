@@ -31,4 +31,4 @@ class VorbisComment(MetadataBlock):
         for tag, values in self.tags.items():
             vals = ','.join(values)
             s += '\n{}: {}'.format(tag.capitalize(), vals)
-        return s + '\n'
+        return s

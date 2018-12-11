@@ -59,5 +59,5 @@ class Picture(MetadataBlock):
         s += 'Width: {}\n'.format(self.width)
         s += 'Height: {}\n'.format(self.height)
         s += 'Color depth: {}\n'.format(self.color_depth)
-        s += 'Used colors: {}\n'.format(self.used_colors)
+        s += 'Used colors: {}'.format(self.used_colors)
         return s

@@ -1,8 +1,5 @@
-import pickle
 from os.path import isfile
 from typing import List, Tuple, Generator
-
-from bitstruct import unpack
 
 from .bit_stream import BitStream
 from .blocks import *
@@ -24,7 +21,7 @@ FIXED_SUBFRAME_COEFFS = [
     [2, -1],
     [3, -3, 1],
     [4, -6, 4, 1],
-]
+]  # type: List[List[int]]
 
 
 class Flac:
@@ -64,18 +61,6 @@ class Flac:
             return block_types[type](size, is_last == 1, self._stream)
         return Unknown(size, is_last == 1, self._stream)
 
-    def retrive_metadata(self, all: bool) -> str:
-        if not all:
-            return str(self._streaminfo)
-
-        res = str(self._streaminfo)
-        for block in self._blocks:
-            if isinstance(block, Unknown):
-                continue
-            res += '\n' + str(block)
-
-        return res
-
     @property
     def sample_width(self):
         return self._streaminfo.bits_per_sample
@@ -93,19 +78,33 @@ class Flac:
         return self._streaminfo.total_samples
 
     @property
+    def metadata_blocks(self):
+        blocks = [self._streaminfo]
+        blocks.extend(self._blocks)
+        return list(filter(lambda b: not isinstance(b, Unknown), blocks))
+
+    @property
     def pictures(self):
         return list(filter(lambda b: isinstance(b, Picture), self._blocks))
 
-    def read_audio_data(self) -> Generator[List[List[int]], None, None]:
+    @property
+    def vorbis_comments(self):
+        return list(filter(lambda b: isinstance(b, VorbisComment),
+                           self._blocks))
+
+    @property
+    def applications(self):
+        return list(filter(lambda b: isinstance(b, Application), self._blocks))
+
+    @property
+    def audio_data(self) -> Generator[List[List[int]], None, None]:
         try:
             while True:
-                blocks = self.decode_frame(self.sample_width)
-                yield blocks
-                # self.__check_frame_blocks(blocks, frame_count)
+                yield self._decode_frame(self.sample_width)
         except EOFError:
             pass
 
-    def decode_frame(self, bits_per_sample: int) -> List[List[int]]:
+    def _decode_frame(self, bits_per_sample: int) -> List[List[int]]:
         sync_code = self._stream.read_uint(14)
         if sync_code != 0b11111111111110:
             raise ValueError('Invalid sync code')
@@ -118,7 +117,6 @@ class Flac:
         self._stream.read_uint(3)  # sample size
         self._stream.read_uint(1)  # reserved bit
 
-        # TODO ???
         temp = self._stream.read_uint(8)
         while temp >= 0b11000000:
             self._stream.read_uint(8)
@@ -142,51 +140,47 @@ class Flac:
 
         self._stream.read_uint(8)  # crc-8
 
-        blocks = self.decode_subframes(block_size, bits_per_sample,
-                                       channel_assigment)
+        blocks = self._decode_subframes(block_size, bits_per_sample,
+                                        channel_assigment)
         self._stream._clear_buffer()  # align to byte
         self._stream.read_uint(16)  # crc-16
 
         return blocks
 
-    def __check_frame_blocks(self, actual, count):
-        with open('../flac_dumps/frame{:02d}'.format(count), 'rb') as f:
-            expected = pickle.load(f)
-        assert actual == expected
-
-    def decode_subframes(self, block_size: int, bits_per_sample: int,
-                         channel_assigment: int) -> List[List[int]]:
+    def _decode_subframes(self, block_size: int, bits_per_sample: int,
+                          channel_assigment: int) -> List[List[int]]:
         if 0 <= channel_assigment <= 7:
-            return [self.decode_subframe(block_size, bits_per_sample)
+            return [self._decode_subframe(block_size, bits_per_sample)
                     for _ in range(channel_assigment + 1)]
 
         if channel_assigment == 8:
-            left = self.decode_subframe(block_size, bits_per_sample)
-            diff = self.decode_subframe(block_size, bits_per_sample + 1)
+            left = self._decode_subframe(block_size, bits_per_sample)
+            diff = self._decode_subframe(block_size, bits_per_sample + 1)
             for i in range(block_size):
                 diff[i] = left[i] - diff[i]
             return [left, diff]
 
         if channel_assigment == 9:
-            diff = self.decode_subframe(block_size, bits_per_sample + 1)
-            right = self.decode_subframe(block_size, bits_per_sample)
+            diff = self._decode_subframe(block_size, bits_per_sample + 1)
+            right = self._decode_subframe(block_size, bits_per_sample)
             for i in range(block_size):
                 diff[i] += right[i]
             return [diff, right]
 
         if channel_assigment == 10:
-            mid = self.decode_subframe(block_size, bits_per_sample)
-            side = self.decode_subframe(block_size, bits_per_sample + 1)
+            mid = self._decode_subframe(block_size, bits_per_sample)
+            side = self._decode_subframe(block_size, bits_per_sample + 1)
             left, right = [-1] * block_size, [-1] * block_size
             for i in range(block_size):
                 left[i] = (((mid[i] << 1) | (side[i] & 1)) + side[i]) >> 1
                 right[i] = (((mid[i] << 1) | (side[i] & 1)) - side[i]) >> 1
             return [left, right]
 
-        raise ValueError('Invalid chanel assigment')
+        raise ValueError(
+            'Invalid chanel assigment: {}'.format(channel_assigment))
 
-    def decode_subframe(self, block_size: int,
-                        bits_per_sample: int) -> List[int]:
+    def _decode_subframe(self, block_size: int,
+                         bits_per_sample: int) -> List[int]:
         self._stream.read_uint(1)  # reserved bit
         subframe_type = self._stream.read_uint(6)
 
@@ -199,34 +193,34 @@ class Flac:
         if subframe_type == 0:
             # CONSTANT subframe
             result = [self._stream.read_sint(bits_per_sample)] * block_size
-        if subframe_type == 1:
+        elif subframe_type == 1:
             # VERBATIM subframe
             result = [self._stream.read_sint(bits_per_sample)
                       for _ in range(block_size)]
-        if 8 <= subframe_type <= 12:
-            result = self.decode_fixed_subframe(subframe_type - 8,
-                                                block_size, bits_per_sample)
-        if 32 <= subframe_type:
-            result = self.decode_lpc_subframe(
+        elif 8 <= subframe_type <= 12:
+            result = self._decode_fixed_subframe(subframe_type - 8,
+                                                 block_size, bits_per_sample)
+        elif 32 <= subframe_type:
+            result = self._decode_lpc_subframe(
                 lpc_order=subframe_type - 31,
                 block_size=block_size,
                 bits_per_sample=bits_per_sample)
         else:
-            raise ValueError('Invalid subframe type')
+            raise ValueError('Invalid subframe type: {}'.format(subframe_type))
 
         if wasted_bits_per_sample > 0:
             return [(s << wasted_bits_per_sample) for s in result]
         return result
 
-    def decode_lpc_subframe(self, lpc_order: int, block_size: int,
-                            bits_per_sample: int) -> List[int]:
+    def _decode_lpc_subframe(self, lpc_order: int, block_size: int,
+                             bits_per_sample: int) -> List[int]:
         warmup_samples = [self._stream.read_sint(bits_per_sample)
                           for _ in range(lpc_order)]
         qlp_precision = self._stream.read_uint(4) + 1
         qlp_shift_needed = self._stream.read_sint(5)
         coefs = [self._stream.read_sint(qlp_precision)
                  for _ in range(lpc_order)]
-        residuals = self.decode_residuals(block_size, lpc_order)
+        residuals = self._decode_residuals(block_size, lpc_order)
 
         result = warmup_samples + [-1] * len(residuals)
         for i in range(lpc_order, len(result)):
@@ -237,12 +231,12 @@ class Flac:
 
         return result
 
-    def decode_fixed_subframe(self, lpc_order: int, block_size: int,
-                              bits_per_sample: int) -> List[int]:
+    def _decode_fixed_subframe(self, lpc_order: int, block_size: int,
+                               bits_per_sample: int) -> List[int]:
         warmup_samples = [self._stream.read_sint(bits_per_sample)
                           for _ in range(lpc_order)]
         coefs = FIXED_SUBFRAME_COEFFS[lpc_order]
-        residuals = self.decode_residuals(block_size, lpc_order)
+        residuals = self._decode_residuals(block_size, lpc_order)
 
         result = warmup_samples + [-1] * len(residuals)
         for i in range(lpc_order, len(result)):
@@ -252,11 +246,11 @@ class Flac:
 
         return result
 
-    def decode_residuals(self, block_size: int,
-                         predictor_order: int) -> List[int]:
+    def _decode_residuals(self, block_size: int,
+                          predictor_order: int) -> List[int]:
         coding_method = self._stream.read_uint(2)
         if coding_method not in [0, 1]:
-            raise ValueError('Invalid coding method')
+            raise ValueError('Invalid coding method: {}'.format(coding_method))
         rice_parameter_len = 4 if coding_method == 0 else 5
         rice_escape_code = 0b1111 if coding_method == 0 else 0b11111
 
