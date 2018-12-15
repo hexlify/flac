@@ -1,5 +1,6 @@
+import struct
 from os.path import getsize
-from typing import List, Tuple, Generator
+from typing import Generator, List, Tuple
 
 from .bit_stream import BitStream
 from .blocks import *
@@ -76,10 +77,6 @@ class Flac:
         return self._streaminfo.total_samples
 
     @property
-    def duration(self):
-        return self.total_samples // self.sample_rate
-
-    @property
     def metadata_blocks(self):
         blocks = [self._streaminfo]
         blocks.extend(self._blocks)
@@ -99,7 +96,19 @@ class Flac:
         return list(filter(lambda b: isinstance(b, Application), self._blocks))
 
     @property
-    def audio_data(self) -> Generator[List[List[int]], None, None]:
+    def data(self) -> Generator[bytes, None, None]:
+        added_val = 128 if self.sample_width == 8 else 0
+        sample_width = self.sample_width // 8
+
+        for blocks in self._audio_data:
+            block_size = len(blocks[0])
+            for i in range(block_size):
+                for j in range(self.channels):
+                    yield struct.pack(
+                        '<i', blocks[j][i] + added_val)[:sample_width]
+
+    @property
+    def _audio_data(self) -> Generator[List[List[int]], None, None]:
         try:
             while True:
                 yield self._decode_frame(self.sample_width)

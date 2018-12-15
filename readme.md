@@ -14,15 +14,22 @@ $ chmod +x get_samples.sh
 $ ./get_samples.sh
 ```
 
-# Запуск
-
-```
-$ cd flac
-$ python main.py [-h] file {info,play,covers} ...
-```
-
 # Запуск тестов
 
 ```
 $ pytest .
 ```
+
+# Запуск
+
+```
+$ python main.py [-h] {meta,play,covers,conv,retr} ...
+```
+
+## Команды
+
++ `meta` - показ метаинформации файла
++ `play` - проигрывание
++ `covers` - извлечение обложек
++ `conv` - конвертация в `.wav`
++ `retr` - печать аудиоданных в консоль

@@ -1,19 +1,19 @@
+import os
 import pickle
-import struct
+import sys
+from binascii import hexlify
 from mimetypes import guess_extension
 from os.path import isdir, isfile, join
-from typing import List, Tuple
+from struct import pack
+from time import sleep
+from typing import Generator, List, Tuple
 
-from argparser import make_parser
-from meta import BitStream, Flac
-from player import PlayerApp, PlayerForm
-from song import Song
+from npyscreen import blank_terminal
 
-
-def check_frame_blocks(actual, count):
-    with open('../flac_dumps/frame{:06d}'.format(count), 'rb') as f:
-        expected = pickle.load(f)
-    assert actual == expected
+from flac.argparser import make_parser
+from flac.meta import BitStream, Flac
+from flac.player import PlayerApp
+from flac.song import Song
 
 
 def convert_to_wav(flac: Flac, wav_filename):
@@ -21,27 +21,29 @@ def convert_to_wav(flac: Flac, wav_filename):
         wav.write(b'RIFF')
         byte_width = flac.sample_width // 8
         data_len = flac.total_samples * flac.channels * (byte_width)
-        wav.write(struct.pack('<I', data_len + 36))
+        wav.write(pack('<I', data_len + 36))
         wav.write(b'WAVE')
         wav.write(b'fmt ')
-        wav.write(struct.pack(
+        wav.write(pack(
             '<IHHIIHH', 16, 0x0001, flac.channels, flac.sample_rate,
             flac.sample_rate * flac.channels * (byte_width),
             flac.channels * (byte_width), flac.sample_width))
         wav.write(b'data')
-        wav.write(struct.pack('<I', data_len))
+        wav.write(pack('<I', data_len))
 
-        add_end = 128 if flac.sample_width == 8 else 0
+        for i, chunk in enumerate(flac.data):
+            if i % 20 == 0:
+                progress = int(flac._f.tell() / flac.size * 100)
+                print('{}%'.format(progress), end='\r')
+            wav.write(chunk)
 
-        for frame_count, blocks in enumerate(flac.audio_data):
-            progress = int(flac._f.tell() / flac.size * 100)
-            print('{}%'.format(progress), end='\r')
 
-            block_size = len(blocks[0])
-            for i in range(block_size):
-                for j in range(flac.channels):
-                    wav.write(struct.pack(
-                        '<i', blocks[j][i] + add_end)[:byte_width])
+def retrieve_data(flac: Flac):
+    try:
+        for chunk in flac.data:
+            sys.stdout.write(hexlify(chunk).decode())
+    except IOError:
+        pass
 
 
 def extract_covers(flac: Flac, path: str):
@@ -97,14 +99,18 @@ def main():
     parser = make_parser()
     args = parser.parse_args()
 
-    if not isfile(args.file):
+    if not isfile(args.flac_file):
         print("Flac file doesn't exist")
         return
 
-    flac = Flac(args.file)
+    flac = Flac(args.flac_file)
 
     if args.command == 'play':
-        Song(flac).play()
+        song = Song(flac)
+        app = PlayerApp(song)
+        sleep(3)
+        os.system('clear')
+        app.run()
 
     if args.command == 'covers':
         extract_covers(flac, args.dir)
@@ -114,6 +120,9 @@ def main():
 
     if args.command == 'conv':
         convert_to_wav(flac, args.wav_file)
+
+    if args.command == 'retr':
+        retrieve_data(flac)
 
 
 if __name__ == '__main__':
